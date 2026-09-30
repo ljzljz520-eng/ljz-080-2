@@ -23,3 +23,8 @@ __pycache__/
 *.log
 .env
 .env.*
+# Local SQLite runtime data
+/data/
+*.db
+*.db-wal
+*.db-shm

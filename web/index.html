@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>海岛民宿能耗托管系统</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">Island Energy Host</p>
+      <h1>海岛民宿能耗托管系统</h1>
+      <p class="subtitle">预冷值守 · 设备告警 · 离店账单 · 光伏蓄水月报</p>
+    </div>
+    <div class="header-actions">
+      <span id="clock" class="clock">--:--</span>
+      <button id="refreshBtn" class="btn secondary">刷新看板</button>
+    </div>
+  </header>
+
+  <main>
+    <nav class="tabs" aria-label="模块切换">
+      <button data-tab="board" class="tab active">管家看板</button>
+      <button data-tab="devices" class="tab">设备状态</button>
+      <button data-tab="bills" class="tab">能耗账单</button>
+      <button data-tab="reports" class="tab">月度对比</button>
+      <button data-tab="onboarding" class="tab">房东接入</button>
+    </nav>
+
+    <section id="toast" class="toast" hidden></section>
+
+    <section id="tab-board" class="tab-panel active">
+      <div id="kpis" class="kpi-grid"></div>
+      <div class="grid two-cols">
+        <article class="card">
+          <div class="card-head">
+            <h2>24小时入住预冷</h2>
+            <span class="hint">未就绪房间可直接下发空调指令</span>
+          </div>
+          <div id="arrivals" class="list"></div>
+        </article>
+        <article class="card">
+          <div class="card-head"><h2>耗电/设备异常</h2><span class="hint">红色需立即处理</span></div>
+          <div id="anomalies" class="list"></div>
+        </article>
+      </div>
+      <article class="card">
+        <div class="card-head"><h2>蓄水状态</h2><span class="hint">低于20%预警，低于10%严重</span></div>
+        <div id="tanks" class="tank-grid"></div>
+      </article>
+    </section>
+
+    <section id="tab-devices" class="tab-panel">
+      <article class="card">
+        <div class="card-head">
+          <h2>已接入设备</h2>
+          <select id="deviceHouseFilter" class="input small"><option value="">全部房源</option></select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>房源/房间</th><th>设备</th><th>类型</th><th>在线</th><th>关键遥测</th><th>时间</th></tr></thead>
+            <tbody id="devicesBody"></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+
+    <section id="tab-bills" class="tab-panel">
+      <article class="card">
+        <div class="card-head">
+          <h2>游客离店能耗账单</h2>
+          <div class="inline-form">
+            <label>订单ID <input id="checkoutBookingId" class="input small" placeholder="如 5" /></label>
+            <button id="checkoutBtn" class="btn">生成账单</button>
+          </div>
+        </div>
+        <div id="bills" class="bill-grid"></div>
+      </article>
+    </section>
+
+    <section id="tab-reports" class="tab-panel">
+      <article class="card">
+        <div class="card-head">
+          <h2>月底房源对比</h2>
+          <div class="inline-form">
+            <input id="reportYear" class="input small" type="number" />
+            <input id="reportMonth" class="input small" type="number" min="1" max="12" />
+            <button id="reportBtn" class="btn">生成月报</button>
+          </div>
+        </div>
+        <div id="reportTotals" class="kpi-grid compact"></div>
+        <div class="grid two-cols">
+          <div id="houseReport" class="list"></div>
+          <div id="roomReport" class="list"></div>
+        </div>
+      </article>
+    </section>
+
+    <section id="tab-onboarding" class="tab-panel">
+      <div class="grid three-cols">
+        <form id="houseForm" class="card form-card">
+          <h2>1. 接入房源</h2>
+          <label>房源名称<input name="name" class="input" required placeholder="如 听海小院" /></label>
+          <label>地址<input name="address" class="input" placeholder="海岛、门牌" /></label>
+          <div class="form-row">
+            <label>电价 元/kWh<input name="electricity_price" class="input" value="0.68" step="0.01" /></label>
+            <label>水价 元/吨<input name="water_price" class="input" value="4.50" step="0.01" /></label>
+          </div>
+          <button class="btn">创建房源</button>
+          <p class="form-result"></p>
+        </form>
+
+        <form id="roomForm" class="card form-card">
+          <h2>2. 添加房间</h2>
+          <label>房源<select name="house_id" class="input" required></select></label>
+          <label>房间名称<input name="name" class="input" required placeholder="如 海景大床房" /></label>
+          <div class="form-row">
+            <label>楼层<input name="floor" class="input" /></label>
+            <label>预冷目标℃<input name="target_temperature" class="input" value="26" type="number" /></label>
+          </div>
+          <button class="btn">创建房间</button>
+          <p class="form-result"></p>
+        </form>
+
+        <form id="deviceForm" class="card form-card">
+          <h2>3. 绑定设备</h2>
+          <label>房源<select name="house_id" class="input" required></select></label>
+          <label>房间<select name="room_id" class="input"><option value="">整栋共享设备</option></select></label>
+          <label>设备类型
+            <select name="type" class="input">
+              <option value="air_conditioner">空调</option>
+              <option value="water_heater">热水器</option>
+              <option value="solar_pv">光伏</option>
+              <option value="water_tank">蓄水</option>
+            </select>
+          </label>
+          <label>设备名称<input name="name" class="input" required placeholder="如 201空调" /></label>
+          <div class="form-row">
+            <label>额定功率kW<input name="rated_power_kw" class="input" type="number" step="0.01" /></label>
+            <label>容量/装机<input name="capacity_liters" class="input" type="number" step="0.01" placeholder="L 或 kWp" /></label>
+          </div>
+          <button class="btn">绑定设备</button>
+          <p class="form-result"></p>
+        </form>
+      </div>
+      <article class="card">
+        <h2>遥测上报示例</h2>
+        <pre class="code">POST /api/telemetry
+{
+  "device_id": 1,
+  "ts": "2026-09-30T12:00:00Z",
+  "power_kw": 0.82,
+  "energy_kwh": 126.4,
+  "room_temperature": 25.6,
+  "set_temperature": 26.0,
+  "online": true
+}</pre>
+      </article>
+    </section>
+  </main>
+
+  <div id="billModal" class="modal" hidden><div class="modal-card">
+    <button id="closeBill" class="modal-close">×</button>
+    <div id="billDetail"></div>
+  </div></div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
