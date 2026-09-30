@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>海岛民宿能耗托管</title>
+<style>
+:root{
+  --bg:#0b1f2a; --panel:#122c3a; --panel2:#0f2735; --line:#1e4254;
+  --text:#dcecf4; --muted:#7fa3b5; --accent:#2dd4bf; --accent2:#38bdf8;
+  --warn:#fbbf24; --crit:#f87171; --ok:#34d399; --info:#60a5fa;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;background:
+  radial-gradient(1200px 600px at 80% -10%,#14435a 0%,transparent 55%),var(--bg);
+  color:var(--text);min-height:100vh;font-size:14px}
+header{padding:18px 26px;border-bottom:1px solid var(--line);display:flex;
+  align-items:center;gap:14px;flex-wrap:wrap;background:rgba(10,28,38,.7);
+  backdrop-filter:blur(6px);position:sticky;top:0;z-index:10}
+header h1{font-size:19px;font-weight:700;letter-spacing:1px}
+header .wave{font-size:22px}
+.tabs{display:flex;gap:6px;margin-left:12px}
+.tab{padding:8px 16px;border-radius:8px;cursor:pointer;color:var(--muted);
+  border:1px solid transparent;transition:.15s;user-select:none}
+.tab:hover{color:var(--text)}
+.tab.active{background:var(--panel);color:var(--accent);border-color:var(--line)}
+.spacer{flex:1}
+.clock{color:var(--muted);font-variant-numeric:tabular-nums}
+main{padding:22px 26px;max-width:1400px;margin:0 auto}
+.page{display:none}.page.active{display:block}
+.grid{display:grid;gap:16px}
+.cards{grid-template-columns:repeat(auto-fit,minmax(190px,1fr));margin-bottom:18px}
+.card{background:linear-gradient(160deg,var(--panel),var(--panel2));
+  border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.card .k{color:var(--muted);font-size:12px;margin-bottom:6px}
+.card .v{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums}
+.card .v small{font-size:13px;color:var(--muted);font-weight:400}
+h2{font-size:15px;margin:18px 0 10px;color:var(--accent2);display:flex;align-items:center;gap:8px}
+h2 .hint{color:var(--muted);font-weight:400;font-size:12px}
+table{width:100%;border-collapse:collapse;background:var(--panel);
+  border:1px solid var(--line);border-radius:12px;overflow:hidden}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line);
+  font-size:13px;vertical-align:middle}
+th{background:#0e2633;color:var(--muted);font-weight:600;font-size:12px}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(45,212,191,.04)}
+.badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600}
+.b-crit{background:rgba(248,113,113,.16);color:var(--crit)}
+.b-warn{background:rgba(251,191,36,.16);color:var(--warn)}
+.b-info{background:rgba(96,165,250,.16);color:var(--info)}
+.b-ok{background:rgba(52,211,153,.16);color:var(--ok)}
+.b-gray{background:rgba(127,163,181,.16);color:var(--muted)}
+.btn{background:var(--accent);color:#06281f;border:none;border-radius:8px;
+  padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;transition:.15s}
+.btn:hover{filter:brightness(1.12)} .btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--accent2);border:1px solid var(--line)}
+.tankbar{height:8px;border-radius:5px;background:#0b2230;overflow:hidden;margin-top:4px;width:130px}
+.tankbar i{display:block;height:100%;border-radius:5px}
+.prop{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  padding:16px 18px;margin-bottom:16px}
+.prop h3{font-size:16px;margin-bottom:2px}.prop .addr{color:var(--muted);font-size:12px;margin-bottom:12px}
+.rooms{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.room{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.room h4{font-size:13px;margin-bottom:8px;color:var(--accent2)}
+.dev{display:flex;justify-content:space-between;gap:8px;padding:5px 0;
+  border-bottom:1px dashed #1c3a4b;font-size:12px}
+.dev:last-child{border:none}
+.dev .nm{color:var(--text)}.dev .vl{color:var(--muted);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.tag{font-size:10px;padding:1px 6px;border-radius:5px;margin-left:6px}
+.tag.ac{background:#1d4ed833;color:#93c5fd}.tag.heater{background:#c2410c33;color:#fdba74}
+.tag.pv{background:#ca8a0433;color:#fde047}.tag.tank{background:#0d948833;color:#5eead4}
+.bill{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:14px}
+.bill .head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.bill .head .code{font-weight:700}.bill .head .total{font-size:22px;color:var(--accent);font-weight:700}
+.bill .rows{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:8px 0}
+.bill .metric{background:var(--panel2);border-radius:8px;padding:10px}
+.bill .metric .k{font-size:11px;color:var(--muted)}.bill .metric .v{font-size:17px;font-weight:700;margin-top:3px}
+.advice li{margin:4px 0 4px 18px;font-size:12.5px;color:var(--text)}
+.score{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-weight:800;font-size:17px;flex-shrink:0}
+select,input{background:var(--panel2);border:1px solid var(--line);color:var(--text);
+  border-radius:8px;padding:7px 10px;font-size:13px}
+.toolbar{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+.muted{color:var(--muted)}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:#0e2633;border:1px solid var(--accent);color:var(--accent);
+  padding:10px 20px;border-radius:10px;font-size:13px;opacity:0;transition:.3s;pointer-events:none;z-index:99}
+.toast.show{opacity:1}
+.legend{font-size:11.5px;color:var(--muted);margin-top:6px}
+</style>
+</head>
+<body>
+<header>
+  <span class="wave">🌊</span>
+  <h1>海岛民宿能耗托管平台</h1>
+  <div class="tabs">
+    <div class="tab active" data-page="butler">入住预冷 · 异常</div>
+    <div class="tab" data-page="properties">房源设备</div>
+    <div class="tab" data-page="bills">能耗账单</div>
+    <div class="tab" data-page="report">月度对比</div>
+  </div>
+  <div class="spacer"></div>
+  <span class="clock" id="clock"></span>
+</header>
+
+<main>
+  <!-- ============ 管家页 ============ -->
+  <section class="page active" id="page-butler">
+    <div class="grid cards">
+      <div class="card"><div class="k">今日入住</div><div class="v" id="m-arrivals">-</div></div>
+      <div class="card"><div class="k">已完成预冷</div><div class="v" id="m-done">-</div></div>
+      <div class="card"><div class="k">待处理 / 预冷中</div><div class="v" id="m-pending" style="color:var(--warn)">-</div></div>
+      <div class="card"><div class="k">未恢复告警</div><div class="v" id="m-alerts" style="color:var(--crit)">-</div></div>
+      <div class="card"><div class="k">蓄水池低液位</div><div class="v" id="m-tanks" style="color:var(--info)">-</div></div>
+    </div>
+
+    <h2>❄️ 今日入住预冷看板 <span class="hint">入住前 60 分钟自动预冷至 24℃，管家也可手动一键预冷</span></h2>
+    <table id="tbl-precool"><thead><tr>
+      <th>房源 / 房间</th><th>客人</th><th>入住时间</th><th>室温</th><th>设定</th><th>空调</th><th>状态</th><th>操作</th>
+    </tr></thead><tbody></tbody></table>
+
+    <h2>🚨 设备异常告警 <span class="hint">规则引擎实时评估，恢复正常后自动解除</span></h2>
+    <table id="tbl-alerts"><thead><tr>
+      <th>级别</th><th>设备</th><th>规则</th><th>描述</th><th>最近发生</th><th>状态</th><th>操作</th>
+    </tr></thead><tbody></tbody></table>
+
+    <h2>💧 房源蓄水状态</h2>
+    <table id="tbl-tanks"><thead><tr>
+      <th>房源</th><th>液位</th><th>进水 L/h</th><th>出水 L/h</th>
+    </tr></thead><tbody></tbody></table>
+  </section>
+
+  <!-- ============ 房源设备页 ============ -->
+  <section class="page" id="page-properties">
+    <div class="toolbar">
+      <span class="muted">每栋房子的空调 / 热水器 / 光伏 / 蓄水池实时状态</span>
+    </div>
+    <div id="props"></div>
+  </section>
+
+  <!-- ============ 账单页 ============ -->
+  <section class="page" id="page-bills">
+    <div class="toolbar">
+      <label>筛选房源
+        <select id="bill-prop"><option value="">全部</option></select>
+      </label>
+      <span class="muted">游客离店后自动生成：用电 / 用水 / 光伏抵扣 / 节能评分与建议</span>
+    </div>
+    <div id="bills"></div>
+  </section>
+
+  <!-- ============ 月报页 ============ -->
+  <section class="page" id="page-report">
+    <div class="toolbar">
+      <label>月份 <input type="month" id="month" value="2026-09"></label>
+      <button class="btn" id="btn-report">生成对比</button>
+      <button class="btn ghost" id="btn-csv">⬇ 导出 CSV</button>
+    </div>
+    <table id="tbl-report"><thead></thead><tbody></tbody></table>
+    <div class="legend">说明：客人用电/用水为计入账单部分；抄表总量含设备故障、暗漏等房东侧损耗；光伏自用率 = 发电 / 抄表总用电。</div>
+  </section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const api = (p, opt) => fetch(p, opt).then(r => r.json().catch(()=>({})));
+let propsCache = [];
+
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
+function fmtTime(iso){if(!iso)return '-';const d=new Date(iso+'Z');return d.toLocaleString('zh-CN',{hour12:false})}
+function fmtClock(iso){const d=new Date(iso+'Z');return d.toLocaleString('zh-CN',{hour12:false})}
+const sevBadge = s => ({critical:'b-crit',warning:'b-warn',info:'b-info'})[s]||'b-gray';
+const sevName = s => ({critical:'严重',warning:'警告',info:'提示'})[s]||s;
+const RULE = {ac_overpower:'空调功率超限',ac_vacant_running:'空房空调运行',ac_low_target:'制冷设定过低',
+  heater_overpower:'热水器功率超限',heater_vacant_running:'空房热水器运行',heater_max_temp:'热水器高温运行',
+  pv_zero_daytime:'白天光伏无出力',pv_overrated:'光伏出力异常',tank_low:'蓄水液位低',
+  tank_leak:'疑似管网漏损',tank_idle_outflow:'无在住持续出水'};
+const PS = {done:['b-ok','已预冷完成'],cooling:['b-warn','预冷中'],pending:['b-warn','待预冷'],
+  missed:['b-crit','已错过窗口'],not_requested:['b-gray','无需预冷']};
+
+// ---------- 管家页 ----------
+async function loadButler(){
+  const d = await api('/api/butler/dashboard');
+  $('#m-arrivals').textContent = d.today_arrivals;
+  $('#m-done').textContent = d.precool_done;
+  $('#m-pending').textContent = d.precool_pending.length;
+  $('#m-alerts').textContent = d.open_alerts.length;
+  $('#m-tanks').textContent = d.tank_status.filter(t=>t.level_pct<30).length;
+  $('#clock').textContent = fmtClock(d.now.slice(0,19));
+
+  $('#tbl-precool tbody').innerHTML = d.precool_pending.length ? d.precool_pending.map(p=>{
+    const [cls,label]=PS[p.status];
+    return `<tr>
+      <td>${p.property_name}<br><span class="muted">${p.room_name}</span></td>
+      <td>${p.guest_name} <span class="muted">${p.guest_count}人</span></td>
+      <td>${fmtTime(p.check_in.slice(0,19))}</td>
+      <td>${p.room_temp??'-'} ℃</td><td>${p.target_temp??'-'} ℃</td>
+      <td>${p.ac_on?'<span class="badge b-ok">运行</span>':'<span class="badge b-gray">关闭</span>'}</td>
+      <td><span class="badge ${cls}">${label}</span></td>
+      <td><button class="btn" onclick="precool(${p.booking_id})">一键预冷</button></td>
+    </tr>`}).join('') : '<tr><td colspan="8" class="muted" style="text-align:center;padding:20px">今天所有房间预冷都已就绪 ✅</td></tr>';
+
+  $('#tbl-alerts tbody').innerHTML = d.open_alerts.length ? d.open_alerts.map(a=>`
+    <tr>
+      <td><span class="badge ${sevBadge(a.severity)}">${sevName(a.severity)}</span></td>
+      <td id="alert-dev-${a.device_id}">#${a.device_id}</td>
+      <td>${RULE[a.rule]||a.rule}</td>
+      <td>${a.message}</td>
+      <td class="muted">${fmtTime(a.last_seen.slice(0,19))}</td>
+      <td>${a.status==='ack'?'<span class="badge b-info">已确认</span>':'<span class="badge b-warn">未处理</span>'}</td>
+      <td>
+        ${a.status==='open'?`<button class="btn ghost" onclick="ack(${a.id})">确认</button>`:''}
+        <button class="btn ghost" onclick="resolve(${a.id})">解除</button>
+      </td>
+    </tr>`).join('') : '<tr><td colspan="7" class="muted" style="text-align:center;padding:20px">暂无异常 🎉</td></tr>';
+
+  $('#tbl-tanks tbody').innerHTML = d.tank_status.map(t=>{
+    const c = t.level_pct<15?'var(--crit)':t.level_pct<30?'var(--warn)':'var(--ok)';
+    return `<tr><td>${t.property_name}</td>
+      <td><div class="tankbar"><i style="width:${Math.max(2,t.level_pct)}%;background:${c}"></i></div>
+        <span class="muted">${t.level_pct.toFixed(0)}%</span></td>
+      <td>${t.inflow_lh.toFixed(0)}</td><td>${t.outflow_lh.toFixed(0)}</td></tr>`}).join('');
+
+  fillDeviceNames(d.open_alerts.map(a=>a.device_id));
+}
+
+async function fillDeviceNames(ids){
+  if(!propsCache.length) propsCache = await api('/api/properties');
+  const uniq=[...new Set(ids)];
+  for(const pid of propsCache){
+    const tree = await api(`/api/properties/${pid.id}`);
+    const all=[...tree.property_devices,...tree.rooms.flatMap(r=>r.devices)];
+    uniq.forEach(id=>{const el=$(`#alert-dev-${id}`);const dev=all.find(x=>x.id===id);
+      if(el&&dev)el.innerHTML=`${dev.name}<br><span class="muted">${dev.code}</span>`});
+  }
+}
+
+window.precool = async id => {
+  const r = await fetch(`/api/bookings/${id}/precool?target_temp=24`,{method:'POST'})
+    .then(x=>x.json());
+  toast(r.dispatched?`已向 ${r.dispatched} 台空调下发预冷指令（目标 ${r.target_temp}℃）`:'操作失败');
+  loadButler();
+};
+window.ack = async id => {await fetch(`/api/alerts/${id}/ack`,{method:'POST'});loadButler()};
+window.resolve = async id => {await fetch(`/api/alerts/${id}/resolve`,{method:'POST'});loadButler()};
+
+// ---------- 房源设备页 ----------
+const TYPE_LABEL={ac:'空调',heater:'热水器',pv:'光伏',tank:'蓄水池'};
+const TYPE_TAG={ac:'ac',heater:'heater',pv:'pv',tank:'tank'};
+function fmtStates(type, states){
+  const m=Object.fromEntries(states.map(s=>[s.metric,s.value]));
+  if(type==='ac') return [
+    ['功率',m.power_kw?.toFixed(2)+' kW'],['室温',m.room_temp?.toFixed(1)+' ℃'],
+    ['设定',m.target_temp?.toFixed(0)+' ℃'],['累计用电',m.energy_kwh?.toFixed(1)+' kWh']];
+  if(type==='heater') return [
+    ['功率',m.power_kw?.toFixed(2)+' kW'],['水温',m.water_temp?.toFixed(1)+' ℃'],
+    ['设定',m.target_temp?.toFixed(0)+' ℃'],['累计用电',m.energy_kwh?.toFixed(1)+' kWh']];
+  if(type==='pv') return [['当前出力',m.power_kw?.toFixed(2)+' kW'],['累计发电',m.gen_kwh?.toFixed(1)+' kWh']];
+  return [['液位',m.level_pct?.toFixed(0)+' %'],['进/出水',(m.inflow_lh?.toFixed(0)||'-')+' / '+(m.outflow_lh?.toFixed(0)||'-')+' L/h'],
+    ['累计出水',(m.out_l?(m.out_l/1000).toFixed(2):'-')+' t']];
+}
+function devHtml(d){
+  const fault = d.fault_profile?`<span class="badge b-crit">故障画像</span>`:'';
+  return `<div class="dev"><span class="nm"><span class="tag ${TYPE_TAG[d.type]}">${TYPE_LABEL[d.type]}</span> ${fault} ${d.name}</span>
+    <span class="vl">${fmtStates(d.type,d.states).map(([k,v])=>`${k} ${v??'-'}`).join(' · ')}</span></div>`;
+}
+async function loadProperties(){
+  propsCache = await api('/api/properties');
+  $('#props').innerHTML = (await Promise.all(propsCache.map(async p=>{
+    const t = await api(`/api/properties/${p.id}`);
+    const shared = t.property_devices.length?`<div class="room"><h4>🏠 房源公共设备（光伏 ${p.pv_capacity_kwp}kWp / 蓄水池 ${p.tank_capacity_l}L）</h4>
+      ${t.property_devices.map(devHtml).join('')}</div>`:'';
+    return `<div class="prop"><h3>🏝️ ${p.name}</h3><div class="addr">${p.address} · 电价 ¥${p.elec_price}/度 · 水价 ¥${p.water_price}/吨</div>
+      <div class="rooms">${t.rooms.map(r=>`<div class="room"><h4>🚪 ${r.name} <span class="muted">(${r.code})</span></h4>
+        ${r.devices.map(devHtml).join('')||'<span class="muted">无设备</span>'}</div>`).join('')}${shared}</div></div>`;
+  }))).join('');
+}
+
+// ---------- 账单页 ----------
+async function loadBills(){
+  const pid = $('#bill-prop').value;
+  propsCache = propsCache.length?propsCache:await api('/api/properties');
+  $('#bill-prop').innerHTML = '<option value="">全部</option>'+propsCache.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  const bills = await api('/api/bills'+(pid?`?property_id=${pid}`:''));
+  $('#bills').innerHTML = bills.length?bills.map(b=>{
+    const sc = b.score>=80?'var(--ok)':b.score>=55?'var(--warn)':'var(--crit)';
+    const adv = (b.advice||[]).map(x=>`<li>${x}</li>`).join('');
+    return `<div class="bill"><div class="head">
+        <div><div class="code">${b.code}</div>
+        <span class="muted">${fmtTime(b.period_start.slice(0,19))} ~ ${fmtTime(b.period_end.slice(0,19))} · ${b.detail.nights}晚 · ${b.detail.guest_count}人</span></div>
+        <div style="display:flex;align-items:center;gap:16px">
+          <div class="score" style="background:${sc}22;color:${sc};border:2px solid ${sc}">${b.score}</div>
+          <div class="total">¥${b.total_fee.toFixed(2)}</div>
+        </div></div>
+      <div class="rows">
+        <div class="metric"><div class="k">用电</div><div class="v">${b.elec_kwh.toFixed(1)} kWh</div></div>
+        <div class="metric"><div class="k">用水</div><div class="v">${b.water_t.toFixed(3)} 吨</div></div>
+        <div class="metric"><div class="k">光伏抵扣</div><div class="v" style="color:var(--accent)">-${b.pv_kwh.toFixed(1)} kWh</div></div>
+        <div class="metric"><div class="k">电费</div><div class="v">¥${b.elec_fee.toFixed(2)}</div></div>
+        <div class="metric"><div class="k">水费</div><div class="v">¥${b.water_fee.toFixed(2)}</div></div>
+        <div class="metric"><div class="k">绿电抵扣</div><div class="v" style="color:var(--accent)">-¥${b.pv_offset_fee.toFixed(2)}</div></div>
+        <div class="metric"><div class="k">用电强度</div><div class="v">${b.detail.elec_per_night.toFixed(1)} 度/晚</div></div>
+        <div class="metric"><div class="k">用水强度</div><div class="v">${b.detail.water_l_per_guest_night.toFixed(0)} L/人晚</div></div>
+      </div>
+      <div><b class="muted" style="font-size:12px">🌱 节能建议：</b><ul class="advice">${adv}</ul></div>
+    </div>`}).join(''):'<div class="muted" style="padding:30px;text-align:center">暂无账单</div>';
+}
+
+// ---------- 月报 ----------
+async function loadReport(){
+  const m = $('#month').value || '2026-09';
+  const r = await api(`/api/reports/monthly?month=${m}`);
+  const head = $('#tbl-report thead');
+  head.innerHTML = `<tr><th>房源</th><th>订单</th><th>人晚</th>
+    <th>客人用电<br><small class="muted">kWh</small></th><th>抄表总用电<br><small class="muted">kWh</small></th><th>异常耗电<br><small class="muted">kWh</small></th>
+    <th>光伏发电<br><small class="muted">kWh</small></th><th>光伏自用率</th>
+    <th>客人用水<br><small class="muted">吨</small></th><th>蓄水池总出水<br><small class="muted">吨</small></th><th>漏损水<br><small class="muted">吨</small></th>
+    <th>度/人晚</th><th>吨/人晚</th><th>账单总额</th><th>告警</th></tr>`;
+  $('#tbl-report tbody').innerHTML = r.properties.map(p=>`<tr>
+    <td><b>${p.property_name}</b><br><span class="muted">${p.property_code}</span></td>
+    <td>${p.bookings}</td><td>${p.guest_nights}</td>
+    <td>${p.elec_kwh.toFixed(1)}</td>
+    <td>${p.meter_elec_kwh.toFixed(1)}</td>
+    <td style="color:${p.loss_elec_kwh>50?'var(--warn)':'inherit'}">${p.loss_elec_kwh.toFixed(1)}</td>
+    <td>${p.pv_kwh.toFixed(1)}</td>
+    <td>${(p.pv_self_ratio*100).toFixed(0)}%</td>
+    <td>${p.water_t.toFixed(3)}</td>
+    <td>${p.meter_water_t.toFixed(2)}</td>
+    <td style="color:${p.loss_water_t>1?'var(--crit)':'inherit'}">${p.loss_water_t.toFixed(2)}</td>
+    <td>${p.elec_per_night.toFixed(2)}</td><td>${p.water_per_night.toFixed(3)}</td>
+    <td>¥${p.total_fee.toFixed(2)}</td>
+    <td>${p.open_alerts?`<span class="badge ${p.open_alerts>=3?'b-crit':'b-warn'}">${p.open_alerts}</span>`:'<span class="badge b-ok">0</span>'}</td>
+  </tr>`).join('');
+}
+
+// ---------- 交互 ----------
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active'); $('#page-'+t.dataset.page).classList.add('active');
+  if(t.dataset.page==='properties')loadProperties();
+  if(t.dataset.page==='bills')loadBills();
+  if(t.dataset.page==='report')loadReport();
+});
+$('#btn-report').onclick=loadReport;
+$('#btn-csv').onclick=()=>{window.location='/api/reports/monthly.csv?month='+($('#month').value||'2026-09')};
+$('#bill-prop').onchange=loadBills;
+
+loadButler();
+setInterval(()=>{if($('#page-butler').classList.contains('active'))loadButler()},15000);
+</script>
+</body>
+</html>
